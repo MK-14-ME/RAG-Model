@@ -9,14 +9,14 @@
         -752,
         304
       ],
-      "id": "1b2baba2-6546-4749-99e9-f94b3e69df41",
+      "id": "add id here",
       "name": "When clicking ‘Execute workflow’"
     },
     {
       "parameters": {
         "resource": "fileFolder",
         "searchMethod": "query",
-        "queryString": "name = '10447_Manual YLMO Seed.pdf'",
+        "queryString": "name = 'add file here'",
         "filter": {},
         "options": {}
       },
@@ -26,12 +26,12 @@
         -528,
         160
       ],
-      "id": "f97c8c51-4f7d-4248-961c-d59082cf0212",
+      "id": "add id here",
       "name": "Search files and folders1",
       "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "YCD0Xfew9sI8E5Ap",
+          "id": "id required",
           "name": "Google Drive account"
         }
       }
@@ -54,11 +54,11 @@
         -304,
         160
       ],
-      "id": "94e2c891-a128-460e-8e23-f2366e5639cd",
+      "id": "id required",
       "name": "Download file",
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "YCD0Xfew9sI8E5Ap",
+          "id": "id required",
           "name": "Google Drive account"
         }
       }
@@ -75,7 +75,7 @@
         -16,
         160
       ],
-      "id": "b593b03b-f6f3-45e8-b7e5-fa67bf46194e",
+      "id": "id required",
       "name": "Extract from File"
     },
     {
@@ -88,7 +88,7 @@
         272,
         160
       ],
-      "id": "443f6262-68ed-4223-95b9-f0d2e4d28d3c",
+      "id": "id required",
       "name": "Code – Text Splitter"
     },
     {
@@ -101,13 +101,13 @@
         560,
         80
       ],
-      "id": "d65430ae-ff52-4d96-8074-3991ac41be75",
+      "id": "id required",
       "name": "Code – Format Embeddings Payload"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://laser-manuals-uabkw8u.svc.aped-4627-b74a.pinecone.io/vectors/upsert",
+        "url": "=add url here",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -122,15 +122,15 @@
         1520,
         160
       ],
-      "id": "4dea7d84-7184-4fba-b530-8cf02a0b6dce",
+      "id": "id required",
       "name": "HTTP Request1",
       "credentials": {
         "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
+          "id": "id required",
           "name": "Google Gemini(PaLM) Api account"
         },
         "httpHeaderAuth": {
-          "id": "aXiytXuCQV8JSWhg",
+          "id": "id required",
           "name": "PineconeApiKey"
         }
       }
@@ -138,7 +138,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents",
+        "url": "this url can be found by contacting the admin",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googlePalmApi",
         "sendBody": true,
@@ -153,11 +153,11 @@
         848,
         80
       ],
-      "id": "32d9ce07-86e9-4a54-a2f1-566bb20fe9ce",
+      "id": "id required",
       "name": "Gemini embed",
       "credentials": {
         "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
+          "id": "id requuired",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -170,7 +170,7 @@
         1072,
         160
       ],
-      "id": "b0a9397c-c129-4767-ab3d-5a8f59816df5",
+      "id": "id required",
       "name": "Merge"
     },
     {
@@ -183,7 +183,7 @@
         1296,
         160
       ],
-      "id": "4ff40705-68c9-42c3-b07a-1f87330bcf1f",
+      "id": "",
       "name": "final code node",
       "alwaysOutputData": true
     },
@@ -192,9 +192,9 @@
         "assignments": {
           "assignments": [
             {
-              "id": "f4a546d5-641d-4d48-8561-6a316249cd1c",
+              "id": "",
               "name": "question",
-              "value": "Is it necessary to clean fiber ?",
+              "value": "as me ?",
               "type": "string"
             }
           ]
@@ -207,13 +207,13 @@
         -528,
         448
       ],
-      "id": "0ba4b81d-6bc5-48b7-bf85-9146269062ce",
+      "id": "",
       "name": "User question"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent?key=AIzaSyB44g1QCax_fU31126dl-YN8n5_11d-90g",
+        "url": "https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent?key=API key required",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -234,7 +234,7 @@
         -304,
         448
       ],
-      "id": "b44cb96d-b51e-4e85-8905-f9d1b08bd3df",
+      "id": "id required",
       "name": "Gemini embed1"
     },
     {
@@ -245,11 +245,11 @@
         -16,
         672
       ],
-      "id": "42bc4b0e-1dd8-46ea-a41f-e9ca3ab9cadf",
+      "id": "id required",
       "name": "Embeddings Google Gemini2",
       "credentials": {
         "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
+          "id": "id required",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -259,9 +259,9 @@
         "mode": "load",
         "pineconeIndex": {
           "__rl": true,
-          "value": "laser-manuals",
+          "value": "",
           "mode": "list",
-          "cachedResultName": "laser-manuals"
+          "cachedResultName": ""
         },
         "prompt": "User question",
         "options": {}
@@ -272,11 +272,11 @@
         -80,
         448
       ],
-      "id": "259ad138-3757-40cb-9162-ff00339b9fed",
+      "id": "",
       "name": "Pinecone Retrieve (Get Many)",
       "credentials": {
         "pineconeApi": {
-          "id": "5aZW355NIBDVBpGy",
+          "id": "",
           "name": "PineconeApi account"
         }
       }
@@ -293,7 +293,7 @@
         976,
         320
       ],
-      "id": "b00926cf-7551-4194-ac66-5c261ba765b3",
+      "id": "",
       "name": "Question and Answer Chain"
     },
     {
@@ -306,11 +306,11 @@
         944,
         544
       ],
-      "id": "bc39bccb-ccab-4b6f-8b06-fe69e669be74",
+      "id": "",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
+          "id": "",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -323,16 +323,16 @@
         1072,
         544
       ],
-      "id": "c8b2c4ae-53f2-4506-9941-09f3c872a83c",
+      "id": "",
       "name": "Vector Store Retriever"
     },
     {
       "parameters": {
         "pineconeIndex": {
           "__rl": true,
-          "value": "laser-manuals",
+          "value": "",
           "mode": "list",
-          "cachedResultName": "laser-manuals"
+          "cachedResultName": ""
         },
         "options": {}
       },
@@ -342,11 +342,11 @@
         1072,
         752
       ],
-      "id": "2960591e-6bda-4049-adda-48eb05837931",
+      "id": "",
       "name": "Pinecone Vector Store",
       "credentials": {
         "pineconeApi": {
-          "id": "5aZW355NIBDVBpGy",
+          "id": "",
           "name": "PineconeApi account"
         }
       }
@@ -359,7 +359,7 @@
         1152,
         960
       ],
-      "id": "56681ae5-b031-4f18-bf79-389ccf4336c7",
+      "id": "",
       "name": "Embeddings Google Gemini",
       "credentials": {
         "googlePalmApi": {
