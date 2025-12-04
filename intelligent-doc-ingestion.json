@@ -1,644 +1,204 @@
 {
-  "name": "n8n RAG Ingestion Workflow",
+  "name": "Photonics RAG Ingestion & Retrieval Workflow",
   "nodes": [
     {
-      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [
-        -752,
-        304
-      ],
-      "id": "add id here",
-      "name": "When clicking ‘Execute workflow’"
+      "position": [-752, 304],
+      "parameters": {}
     },
+
     {
+      "id": "gdrive-search",
+      "name": "Google Drive – Search File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-528, 160],
+      "alwaysOutputData": true,
       "parameters": {
         "resource": "fileFolder",
         "searchMethod": "query",
-        "queryString": "name = 'add file here'",
+        "queryString": "name = 'ADD_YOUR_FILENAME.pdf'",
         "filter": {},
         "options": {}
       },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        -528,
-        160
-      ],
-      "id": "add id here",
-      "name": "Search files and folders1",
-      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "id required",
-          "name": "Google Drive account"
+          "id": "<ADD_GOOGLE_DRIVE_CREDENTIAL_ID>",
+          "name": "Google Drive OAuth Credential"
         }
       }
     },
+
     {
+      "id": "gdrive-download",
+      "name": "Google Drive – Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-304, 160],
       "parameters": {
         "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "={{$json[\"id\"]}}\n",
-          "mode": "id"
-        },
+        "fileId": "={{ $json[\"id\"] }}",
         "options": {
           "binaryPropertyName": "binary"
         }
       },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        -304,
-        160
-      ],
-      "id": "id required",
-      "name": "Download file",
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "id required",
-          "name": "Google Drive account"
+          "id": "<ADD_GOOGLE_DRIVE_CREDENTIAL_ID>",
+          "name": "Google Drive OAuth Credential"
         }
       }
     },
+
     {
+      "id": "file-extract",
+      "name": "Extract Text from PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [-16, 160],
       "parameters": {
         "operation": "pdf",
         "binaryPropertyName": "binary",
         "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        -16,
-        160
-      ],
-      "id": "id required",
-      "name": "Extract from File"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Ultra-fast, low-memory text splitter for large PDFs\n\nconst text = $json[\"text\"];\nconst chunkSize = 1500;      // adjust if needed\nconst overlap = 200;\n\nconst chunks = [];\nfor (let start = 0; start < text.length; start += (chunkSize - overlap)) {\n  const end = Math.min(start + chunkSize, text.length);\n\n  chunks.push({\n    chunk: text.slice(start, end),\n    chunk_id: chunks.length\n  });\n}\n\nreturn chunks.map(c => ({ json: c }));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        272,
-        160
-      ],
-      "id": "id required",
-      "name": "Code – Text Splitter"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\nconst requests = items.map((item, index) => {\n  return {\n    model: \"models/text-embedding-004\",\n    content: {\n      parts: [\n        {\n          text: item.json.chunk\n        }\n      ]\n    }\n  };\n});\n\nreturn items.map((item, index) => {\n  return {\n    json: {\n      chunk: item.json.chunk,\n      chunk_id: index,\n      requests\n    }\n  };\n});\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        560,
-        80
-      ],
-      "id": "id required",
-      "name": "Code – Format Embeddings Payload"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=add url here",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ $json }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        1520,
-        160
-      ],
-      "id": "id required",
-      "name": "HTTP Request1",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "id required",
-          "name": "Google Gemini(PaLM) Api account"
-        },
-        "httpHeaderAuth": {
-          "id": "id required",
-          "name": "PineconeApiKey"
-        }
       }
     },
+
     {
+      "id": "text-splitter",
+      "name": "Code – Text Splitter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [272, 160],
+      "parameters": {
+        "jsCode": "// Splits extracted text into chunks for embedding\nconst text = $json[\"text\"];\nconst chunkSize = 1500;\nconst overlap = 200;\nconst chunks = [];\n\nfor (let start = 0; start < text.length; start += (chunkSize - overlap)) {\n  const end = Math.min(start + chunkSize, text.length);\n  chunks.push({ chunk: text.slice(start, end), chunk_id: chunks.length });\n}\n\nreturn chunks.map(c => ({ json: c }));"
+      }
+    },
+
+    {
+      "id": "format-embedding-payload",
+      "name": "Code – Format Embedding Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 80],
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst requests = items.map((item, index) => ({\n  model: \"models/text-embedding-004\",\n  content: {\n    parts: [{ text: item.json.chunk }]\n  }\n}));\n\nreturn items.map((item, index) => ({\n  json: { chunk: item.json.chunk, chunk_id: index, requests }\n}));"
+      }
+    },
+
+    {
+      "id": "gemini-embed",
+      "name": "Gemini – Batch Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [848, 80],
       "parameters": {
         "method": "POST",
-        "url": "this url can be found by contacting the admin",
+        "url": "<ADD_GEMINI_EMBEDDING_ENDPOINT>",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googlePalmApi",
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "=requests",
-        "body": "={{ { \"requests\": $json.requests } }}",
-        "options": {}
+        "body": "={{ { \"requests\": $json.requests } }}"
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        848,
-        80
-      ],
-      "id": "id required",
-      "name": "Gemini embed",
       "credentials": {
         "googlePalmApi": {
-          "id": "id requuired",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "<ADD_GEMINI_CREDENTIAL_ID>",
+          "name": "Google Gemini API Credential"
         }
       }
     },
+
     {
-      "parameters": {},
+      "id": "merge-node",
+      "name": "Merge Chunks + Embeddings",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [
-        1072,
-        160
-      ],
-      "id": "id required",
-      "name": "Merge"
+      "position": [1072, 160],
+      "parameters": {}
     },
+
     {
-      "parameters": {
-        "jsCode": "// STEP 1 — Separate chunk texts and embeddings\nconst chunkTexts = [];\nconst embeddingVectors = [];\n\nfor (const item of items) {\n  const data = item.json;\n\n  if (data.chunk !== undefined && data.chunk_id !== undefined) {\n    chunkTexts[data.chunk_id] = data.chunk;\n  }\n  else if (data.embeddings && data.embeddings[0] && data.embeddings[0].values) {\n    embeddingVectors.push(data.embeddings[0].values);\n  }\n}\n\n// STEP 2 — Validate\nif (chunkTexts.length !== embeddingVectors.length) {\n  throw new Error(`Mismatch: ${chunkTexts.length} chunks but ${embeddingVectors.length} embeddings`);\n}\n\n// STEP 3 — Build vectors\nconst vectors = [];\n\nfor (let i = 0; i < chunkTexts.length; i++) {\n  vectors.push({\n    id: `chunk_${i}`,\n    values: embeddingVectors[i],\n    metadata: {\n      text: chunkTexts[i],\n      chunk_id: i,\n      source: \"YOUR_FILE.pdf\"\n    }\n  });\n}\n\n// STEP 4 — Pinecone upsert format\nreturn [{\n  json: {\n    vectors\n  }\n}];\n"
-      },
+      "id": "format-vectors",
+      "name": "Code – Build Pinecone Vectors",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1296,
-        160
-      ],
-      "id": "",
-      "name": "final code node",
-      "alwaysOutputData": true
+      "position": [1296, 160],
+      "alwaysOutputData": true,
+      "parameters": {
+        "jsCode": "// Combine chunks with embeddings into Pinecone vector format\nconst chunkTexts = [];\nconst embeddingVectors = [];\n\nfor (const item of items) {\n  const data = item.json;\n\n  if (data.chunk !== undefined) chunkTexts[data.chunk_id] = data.chunk;\n  else if (data.embeddings?.[0]?.values) embeddingVectors.push(data.embeddings[0].values);\n}\n\nif (chunkTexts.length !== embeddingVectors.length)\n  throw new Error(\"Mismatch between chunks and embeddings\");\n\nconst vectors = chunkTexts.map((txt, i) => ({\n  id: `chunk_${i}`,\n  values: embeddingVectors[i],\n  metadata: { text: txt, chunk_id: i, source: \"ADD_SOURCE_FILENAME\" }\n}));\n\nreturn [{ json: { vectors } }];"
+      }
     },
+
     {
+      "id": "pinecone-upsert",
+      "name": "Pinecone – Upsert Vectors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1520, 160],
+      "parameters": {
+        "method": "POST",
+        "url": "<ADD_PINECONE_UPSERT_URL>",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "<ADD_PINECONE_API_KEY_ID>",
+          "name": "Pinecone API Key"
+        }
+      }
+    },
+
+    {
+      "id": "user-question",
+      "name": "User Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-528, 448],
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "",
               "name": "question",
-              "value": "as me ?",
+              "value": "ADD_YOUR_QUESTION_HERE",
               "type": "string"
             }
           ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -528,
-        448
-      ],
-      "id": "",
-      "name": "User question"
+        }
+      }
     },
+
     {
-      "parameters": {
-        "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent?key=API key required",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "=Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": \"{{$json.question}}\"\n      }\n    ]\n  }\n}",
-        "options": {}
-      },
+      "id": "gemini-question-embedding",
+      "name": "Gemini – Embed Question",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [
-        -304,
-        448
-      ],
-      "id": "id required",
-      "name": "Gemini embed1"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        -16,
-        672
-      ],
-      "id": "id required",
-      "name": "Embeddings Google Gemini2",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "id required",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
+      "position": [-304, 448],
       "parameters": {
-        "mode": "load",
-        "pineconeIndex": {
-          "__rl": true,
-          "value": "",
-          "mode": "list",
-          "cachedResultName": ""
-        },
-        "prompt": "User question",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [
-        -80,
-        448
-      ],
-      "id": "",
-      "name": "Pinecone Retrieve (Get Many)",
-      "credentials": {
-        "pineconeApi": {
-          "id": "",
-          "name": "PineconeApi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "{{ $('User question').json.question }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
-      "typeVersion": 1.6,
-      "position": [
-        976,
-        320
-      ],
-      "id": "",
-      "name": "Question and Answer Chain"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        944,
-        544
-      ],
-      "id": "",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
-      "typeVersion": 1,
-      "position": [
-        1072,
-        544
-      ],
-      "id": "",
-      "name": "Vector Store Retriever"
-    },
-    {
-      "parameters": {
-        "pineconeIndex": {
-          "__rl": true,
-          "value": "",
-          "mode": "list",
-          "cachedResultName": ""
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [
-        1072,
-        752
-      ],
-      "id": "",
-      "name": "Pinecone Vector Store",
-      "credentials": {
-        "pineconeApi": {
-          "id": "",
-          "name": "PineconeApi account"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1152,
-        960
-      ],
-      "id": "",
-      "name": "Embeddings Google Gemini",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "return [\n  {\n    question: $input.first().json.question || $items(\"User question\")[0].json.question,\n    context: $input.all().map(item => item.json.document.pageContent).join(\"\\n\\n\")\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        272,
-        448
-      ],
-      "id": "0a034be9-e1c0-40b7-ae4a-ab455cd489b6",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "models/gemini-2.0-flash",
-          "mode": "list",
-          "cachedResultName": "models/gemini-2.0-flash"
-        },
-        "messages": {
-          "values": [
-            {
-              "content": "=You are a RAG question answering assistant.\n\nUse ONLY the context below to answer the user question.\n\nIf the answer is not inside the context, say:\n\"I don't know based on the document.\"\n\nQuestion:\n{{ $json.question }}\n\nContext:\n{{ $json.context }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.googleGemini",
-      "typeVersion": 1,
-      "position": [
-        496,
-        448
-      ],
-      "id": "c8df20d2-8dc8-4cb9-996c-51d72387a908",
-      "name": "Message a model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "glte5A3ooIC8zGP7",
-          "name": "Google Gemini(PaLM) Api account"
-        }
+        "method": "POST",
+        "url": "<ADD_GEMINI_SINGLE_EMBED_ENDPOINT>",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"content\": { \"parts\": [{ \"text\": \"{{$json.question}}\" }] } }"
       }
     }
   ],
-  "pinData": {},
-  "connections": {
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "User question",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Search files and folders1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Search files and folders1": {
-      "main": [
-        [
-          {
-            "node": "Download file",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download file": {
-      "main": [
-        [
-          {
-            "node": "Extract from File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract from File": {
-      "main": [
-        [
-          {
-            "node": "Code – Text Splitter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code – Text Splitter": {
-      "main": [
-        [
-          {
-            "node": "Code – Format Embeddings Payload",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code – Format Embeddings Payload": {
-      "main": [
-        [
-          {
-            "node": "Gemini embed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gemini embed": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "final code node",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "final code node": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "User question": {
-      "main": [
-        [
-          {
-            "node": "Gemini embed1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gemini embed1": {
-      "main": [
-        [
-          {
-            "node": "Pinecone Retrieve (Get Many)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Embeddings Google Gemini2": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Pinecone Retrieve (Get Many)",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Pinecone Retrieve (Get Many)": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Question and Answer Chain",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Vector Store Retriever": {
-      "ai_retriever": [
-        [
-          {
-            "node": "Question and Answer Chain",
-            "type": "ai_retriever",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Pinecone Vector Store": {
-      "ai_vectorStore": [
-        [
-          {
-            "node": "Vector Store Retriever",
-            "type": "ai_vectorStore",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Embeddings Google Gemini": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Pinecone Vector Store",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Question and Answer Chain": {
-      "main": [
-        []
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Message a model",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
+
+  "connections": {},
+
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": ""
-  },
-  "id": "LK3wUHjdFvg2y8k0",
   "tags": []
 }
