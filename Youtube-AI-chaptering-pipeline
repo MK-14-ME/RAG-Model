@@ -1,1 +1,205 @@
 
+{
+  "name": "YouTube Transcript → Chapters, Summary, SEO Automation",
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-576, -64],
+      "parameters": {}
+    },
+
+    {
+      "id": "set-video-url",
+      "name": "Set YouTube URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-352, -64],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "url",
+              "value": "https://www.youtube.com/watch?v=ADD_VIDEO_ID",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "download-transcript",
+      "name": "Fetch Transcript (RapidAPI)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [-128, -64],
+      "parameters": {
+        "url": "=https://youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com/download-all/{{$json[\"url\"].split(\"v=\")[1]}}?format_subtitle=srt&format_answer=json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-key",
+              "value": "{{RAPIDAPI_KEY}}"
+            },
+            {
+              "name": "x-rapidapi-host",
+              "value": "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "clean-srt",
+      "name": "Clean Transcript (SRT → Plain Text)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [96, -64],
+      "parameters": {
+        "jsCode": "let srt = $json.subtitle;\n\nsrt = srt\n  .replace(/^\\d+$/gm, \"\")\n  .replace(/\\d{2}:\\d{2}:\\d{2},\\d{3}.*$/gm, \"\")\n  .replace(/→.*$/gm, \"\")\n  .replace(/&#39;/g, \"'\")\n  .replace(/&gt;/g, \">\")\n  .replace(/\\n{2,}/g, \"\\n\")\n  .trim();\n\nreturn { json: { transcript: srt } };"
+      }
+    },
+
+    {
+      "id": "generate-summary-seo",
+      "name": "AI – Summary, SEO, Tags, Hashtags",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [320, -208],
+      "parameters": {
+        "modelId": "models/gemini-2.5-flash",
+        "messages": {
+          "values": [
+            {
+              "content": "=You MUST return valid JSON only.\n{\n  \"summary\": \"\",\n  \"seo_description\": \"\",\n  \"tags\": \"\",\n  \"hashtags\": \"\"\n}\n\nTASK:\n- 5–7 sentence summary\n- 120–200 word SEO description\n- 15 YouTube tags (comma-separated)\n- 8–12 hashtags\n\nTranscript:\n{{ $json.transcript }}"
+            }
+          ]
+        },
+        "jsonOutput": true
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<ADD_GEMINI_API_CREDENTIAL_ID>",
+          "name": "Google Gemini API Credential"
+        }
+      }
+    },
+
+    {
+      "id": "generate-chapters",
+      "name": "AI – Generate Chapters",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [320, 96],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a YouTube chapter generator.\nCreate 5–10 chapters with timestamps (MM:SS).\nFirst chapter starts at 00:00.\nTranscript:\n{{ $json.transcript }}"
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<ADD_GEMINI_API_CREDENTIAL_ID>",
+          "name": "Google Gemini API Credential"
+        }
+      }
+    },
+
+    {
+      "id": "extract-chapters",
+      "name": "Extract Chapters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, 96],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Chapters",
+              "value": "={{ $json.text.trim() }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "extract-ai-results",
+      "name": "Extract Summary / SEO / Tags",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, -208],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            },
+            {
+              "name": "SEO_Description",
+              "value": "={{ $json.seo_description }}",
+              "type": "string"
+            },
+            {
+              "name": "Tags",
+              "value": "={{ $json.tags }}",
+              "type": "string"
+            },
+            {
+              "name": "Hashtags",
+              "value": "={{ $json.hashtags }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "merge-results",
+      "name": "Merge All Outputs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [896, -64],
+      "parameters": {
+        "mode": "combine"
+      }
+    },
+
+    {
+      "id": "final-output",
+      "name": "Final Output (Formatted)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, -64],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Chapters",
+              "value": "={{ $json.Chapters }}",
+              "type": "string"
+            },
+            {
+              "name": "Summary",
+              "value": "={{ $json.Summary }}",
+              "type": "string"
+            },
+            {
+              "name": "SEO_Description",
+              "value": "={{ $json.SEO_Description }}",
+              "type": "string"
+            },
+            {
+              "name": "Tags",
+              "value": "={{ $json.Tags }}",
+              "type": "string"
+            },
+            {
+              "name": "Hashtags",
